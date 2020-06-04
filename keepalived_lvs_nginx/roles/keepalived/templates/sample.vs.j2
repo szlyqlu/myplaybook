@@ -1,0 +1,9 @@
+virtual_server {{ vip }} {{ vport }}
+{
+	delay_loop 5
+	lb_algo sh
+	lb_kind DR
+	protocol {{ prot }}
+	persistence_timeout 50
+	include /etc/keepalived/conf/{{ vip }}_{{ vport }}_{{ prot }}/*.rs
+}

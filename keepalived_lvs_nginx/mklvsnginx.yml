@@ -1,0 +1,13 @@
+- hosts: lvs
+  roles:
+    - mkka
+
+- hosts: nginx
+  roles:
+    - mkng
+
+- hosts:
+    - lvs
+    - nginx
+  roles:
+    - common

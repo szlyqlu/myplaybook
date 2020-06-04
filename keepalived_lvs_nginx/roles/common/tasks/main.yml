@@ -1,0 +1,14 @@
+- name: 修改sysctl
+  template:
+    src: "sysctl.conf.j2"
+    dest: /etc/sysctl.conf
+
+- name: 修改limits
+  template:
+    src: "limits.conf.j2"
+    dest: /etc/security/limits.conf
+
+- name: 生效参数
+  shell: |
+    sysctl -p;ulimit -n
+    

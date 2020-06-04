@@ -1,0 +1,7 @@
+- hosts: lvs
+  roles:
+    - keepalived
+
+- hosts: nginx
+  roles:
+    - nginx

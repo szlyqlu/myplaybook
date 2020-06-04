@@ -1,0 +1,5 @@
+real_server {{ item }} {{ vport }} {
+	TCP_CHECK {
+		connect_port 22
+	}
+}

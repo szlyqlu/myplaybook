@@ -1,0 +1,25 @@
+---
+- name: 拷贝nginx的vip配置文件
+  template:
+    src: "nginx_sample.l4.j2"
+    dest: "/etc/nginx/conf.d/{{ vip }}_{{ vport }}_{{ prot }}.stream"
+  with_items:
+    - "{{ rslist }}"
+
+- name: 添加vip本地回路
+  shell: |
+    if ip a s lo|grep global|grep -wq {{ vip }};then
+      ip addr del {{ vip }}/32 dev lo && ip addr add {{ vip }}/32 dev lo
+    else
+      ip addr add {{ vip }}/32 dev lo
+    fi
+
+- name: 添加本地回路开机启动
+  lineinfile:
+    path: /etc/rc.d/rc.local
+    line: "ip addr add {{ vip }}/32 dev lo"
+    mode: 0755
+
+- name: 语法检查和重载服务
+  shell: |
+    nginx -t && nginx -s reload

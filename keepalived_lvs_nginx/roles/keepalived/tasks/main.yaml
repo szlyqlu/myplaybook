@@ -1,0 +1,28 @@
+---
+- name: 拷贝vip文件
+  template:
+    src: sample.vip.j2
+    dest: "/etc/keepalived/vip/{{ vip }}.vip"
+
+- name: copy vs文件
+  template:
+    src: sample.vs.j2
+    dest: "/etc/keepalived/conf/{{ vip }}_{{ vport }}_{{ prot }}.vs"
+    backup: yes
+
+- name: 创建rs文件的目录
+  file:
+    path: "/etc/keepalived/conf/{{ vip }}_{{ vport }}_{{ prot }}"
+    state: directory
+
+- name: 拷贝rs文件
+  template:
+    src: sample.rs.j2
+    dest: "/etc/keepalived/conf/{{ vip }}_{{ vport }}_{{ prot }}/{{ item }}_{{ vport }}.rs"
+  with_items:
+    - "{{ nginxlist }}"
+
+- name: 重启keepalived服务
+  service:
+    name: keepalived
+    state: restarted
