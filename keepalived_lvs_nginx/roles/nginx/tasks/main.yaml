@@ -11,6 +11,7 @@
     dest: "/etc/nginx/conf.d/ssl"
   with_items:
     - "{{ tlslist }}"
+  when: tlsup == 'yes'
   
 - name: 拷贝nginx的vip配置文件
   template:
