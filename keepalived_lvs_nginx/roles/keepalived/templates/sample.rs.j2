@@ -1,4 +1,4 @@
-real_server {{ item }} {{ vport }} {
+real_server {{ item[0] }} {{ item[1].vport }} {
 	TCP_CHECK {
 		connect_port 22
 	}

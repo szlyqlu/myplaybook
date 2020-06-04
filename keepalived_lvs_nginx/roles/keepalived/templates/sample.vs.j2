@@ -1,9 +1,15 @@
-virtual_server {{ vip }} {{ vport }}
+virtual_server {{ item.vip }} {{ item.vport }}
 {
 	delay_loop 5
 	lb_algo sh
 	lb_kind DR
-	protocol {{ prot }}
+{% if item.prot == 'udp' %}
+	protocol UDP
 	persistence_timeout 50
-	include /etc/keepalived/conf/{{ vip }}_{{ vport }}_{{ prot }}/*.rs
+	include /etc/keepalived/conf/{{ item.vip }}_{{ item.vport }}_UDP/*.rs
+{% else %}
+    protocol TCP
+	persistence_timeout 50
+	include /etc/keepalived/conf/{{ item.vip }}_{{ item.vport }}_TCP/*.rs
+{% endif %}
 }

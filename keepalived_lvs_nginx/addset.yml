@@ -1,7 +1,11 @@
 - hosts: lvs
+  vars_files:
+    - requestlist.yml
   roles:
     - keepalived
 
 - hosts: nginx
+  vars_files:
+    - requestlist.yml
   roles:
     - nginx
