@@ -1,0 +1,8 @@
+requestlist:
+  - { vip: "192.168.30.200", vport: "80", rslist: ['192.168.30.71:80','192.168.30.72:80'], prot: 'tcp' }
+
+tlsup: no
+
+tlslist:
+  - test.crt
+  - test.key

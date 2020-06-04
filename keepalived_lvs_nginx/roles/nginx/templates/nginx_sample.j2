@@ -1,0 +1,35 @@
+upstream {{ item.vip }}_{{ item.vport }}_{{ item.prot }} {
+	hash $remote_addr consistent;
+{% for rs in item.rslist %}
+	server {{ rs }} max_fails=3 fail_timeout=30s;
+{% endfor %}
+}
+
+server {
+{% if item.prot == 'tcp' or item.prot == 'udp' %}
+{% if item.prot == 'udp' %}
+	listen	{{ item.vip }}:{{ item.vport }} udp;
+{% else %}
+	listen	{{ item.vip }}:{{ item.vport }};
+{% endif %}
+	proxy_connect_timeout 60s;
+	proxy_timeout 10m;
+	proxy_pass {{ item.vip }}_{{ item.vport }}_{{ item.prot }};
+{% else %}
+    listen	{{ item.vip }}:{{ item.vport }}{{ item.prot|replace('https',' ssl')|replace('http','') }};
+    server_name {{ item.vip }}:{{ item.vport }};
+{% if item.prot == 'https' %}
+    ssl_certificate      /etc/nginx/conf.d/ssl/{{ item.crt }};
+    ssl_certificate_key  /etc/nginx/conf.d/ssl/{{ item.key }};
+{% endif %}
+
+    location / {
+        proxy_pass http://{{ item.vip }}_{{ item.vport }}_{{ item.prot }};
+
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto http;
+    }
+}
