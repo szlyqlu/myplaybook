@@ -1,4 +1,17 @@
 ---
+- name: 创建证书目录
+  file:
+    path: "/etc/nginx/conf.d/ssl"
+    state: directory
+  when: tlsup == 'yes'
+
+- name: 上传证书
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/nginx/conf.d/ssl"
+  with_items:
+    - "{{ tlslist }}"
+  
 - name: 拷贝nginx的vip配置文件
   template:
     src: "nginx_sample.j2"
