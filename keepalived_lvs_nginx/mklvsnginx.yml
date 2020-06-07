@@ -3,6 +3,9 @@
     - mkka
 
 - hosts: nginx
+  vars:
+    useyum: 'no'
+    nginxpkg: 'nginx-1.16.1'
   roles:
     - mkng
 

@@ -1,0 +1,19 @@
+- name: 安装依赖(编译安装)
+  yum:
+    nam: ['wget','git','patch','pcre-devel','zlib-devel','openssl-devel']
+
+- name: 添加nginx用户(编译安装)
+  user:
+    name: nginx
+  
+- name: 安装nginx(编译安装)
+  include: buildcmd.yml
+    
+- name: 拷贝serivce文件
+  template:
+    src: nginx.service
+    dest: /usr/lib/systemd/system/nginx.service
+
+- name: 重载系统服务
+  shell: |
+    systemctl daemon-reload

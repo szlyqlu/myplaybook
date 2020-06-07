@@ -1,9 +1,12 @@
-- name: 安装nginx
+- name: 安装nginx(yum安装)
   yum:
-    name: "{{ item }}"
-  with_items:
-    - "nginx"
+    name: "{{ nginxpkg }}"
+  when: useyum == 'yes'
 
+- name: 安装nignx(编译安装)
+  include: nginxbuild.yml
+  when: useyum == 'no'
+    
 - name: 拷贝配置文件
   template:
     src: "nginx.conf.j2"
