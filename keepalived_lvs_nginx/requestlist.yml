@@ -3,6 +3,10 @@ requestlist:
 
 tlsup: no
 
-tlslist:
-  - test.crt
-  - test.key
+tlslist: "{% set mylist = [] } -%}
+         {% for item in requestlist -%}
+         {% if item.prot == 'https' -%}
+         {% set _ = mylist.append(item.crt) -%}
+         {% set _ = mylist.append(item.key) -%}
+         {% endfor -%}
+         {{ mylist }}"

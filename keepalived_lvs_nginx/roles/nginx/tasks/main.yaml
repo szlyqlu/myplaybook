@@ -8,9 +8,9 @@
 - name: 上传证书
   copy:
     src: "{{ item }}"
-    dest: "/etc/nginx/conf.d/ssl"
+    dest: "/etc/nginx/conf.d/ssl/{{ item }}"
   with_items:
-    - "{{ tlslist }}"
+    - "{{ tlslist | unique }}"
   when: tlsup == 'yes'
   
 - name: 拷贝nginx的vip配置文件
