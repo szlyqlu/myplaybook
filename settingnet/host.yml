@@ -1,0 +1,29 @@
+ungroup:
+  hosts:
+    192.168.30.71:
+      myethlist:
+        - name: "eth1"
+          bondname: "bond0"
+        - name: "eth2"
+          bondname: "bond0"
+        - name: "eth3"
+          bondname: "bond1"
+        - name: "eth4"
+          bondname: "bond1"
+      mybondlist:
+        - bondname: "bond0"
+          vlanid: "1"
+        - bondname: "bond1"
+          vlanid: "2"
+      bryesorno: "yes"
+      mybrlist:
+        - brname: vlan2
+      myaddinfo:
+        - path: /etc/sysconfig/network-scripts/ifcfg-bond0
+          content: "IPADDR=192.168.30.71\nNETMASK=255.255.255.0\nGATEWAY=192.168.30.1"
+        - path: /etc/sysconfig/network-scripts/ifcfg-bond0
+          content: "BONDING_OPTS=\"mode=1 miion=100\""
+        - path: /etc/sysconfig/network-scripts/ifcfg-bond1
+          content: "BONDING_OPTS=\"mode=4 miion=100\""
+        - path: /etc/sysconfig/network-scripts/ifcfg-bond1.2
+          content: "BRIDGE=vlan2"

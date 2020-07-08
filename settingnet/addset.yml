@@ -1,0 +1,12 @@
+- hosts: all
+  tasks:
+    - name: 添加网络设定
+      include: job/addset.yml
+
+- hosts: localhost
+  gather_facts: no
+  connection: local
+  tasks:
+    - name: 本地提醒修改
+      debug:
+        msg: "网络修改完成，为了安全不重启网络，请自行登录主机查看网络配置文件，无误后自行重启"

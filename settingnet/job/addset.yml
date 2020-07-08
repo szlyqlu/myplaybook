@@ -1,0 +1,46 @@
+- name: 创建网卡备份目录
+  file:
+    path: "/root/netbak"
+    state: directory
+
+- name: 备份网卡
+  shell: |
+    ts=`date +%Y%m%d%H%M`
+    mkdir -p /root/netbak/ifbak.$ts
+    cp /etc/sysconfig/network-scripts/ifcfg-* /root/netbak/ifbak.$ts
+
+- name: 拷贝eth文件
+  template:
+    src: "templates/ifcfg-eth.j2"
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item.name }}"
+  with_items:
+    - "{{ myethlist }}"
+
+- name: 拷贝bond文件
+  template:
+    src: "templates/ifcfg-bond.j2"
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item.bondname }}"
+  with_items:
+    - "{{ mybondlist }}"
+
+- name: 拷贝bond.vlanid文件
+  template:
+    src: "templates/ifcfg-bond.vlan.j2"
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item.bondname }}.{{ item.vlanid }}"
+  with_items:
+    - "{{ mybondlist }}"
+
+- name: 拷贝网桥文件
+  template:
+    src: "templates/ifcfg-br.j2"
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item.brname }}"
+  when: bryesorno = "yes"
+  with_items:
+    - "{{ mybrlist }}"
+
+- name: 添加额外信息到文件
+  lineinfile:
+    path: "{{ item.path }}"
+    line: "{{ item.content }}"
+  with_items:
+    - "{{ myaddinfo }}"
