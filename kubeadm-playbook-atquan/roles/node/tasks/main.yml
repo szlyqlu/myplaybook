@@ -1,0 +1,6 @@
+- name: 加入集群
+  shell: |
+    kubeadm join {{ apiserverip }}:6443 \
+    --apiserver-advertise-address {{ inventory_hostname }} \
+    --token {{ lookup('pipe','cat kubeadm_join_info|head -1') }} \
+    --discovery-token-ca-cert-hash sha256:{{ lookup('pipe','cat kubeadm_join_info|tail -1') }}

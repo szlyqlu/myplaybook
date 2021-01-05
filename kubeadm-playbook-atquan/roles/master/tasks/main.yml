@@ -1,0 +1,36 @@
+- name: 初始化集群
+  shell: |
+    kubeadm init \
+    --kubernetes-version={{ k8sver }} \
+    --image-repository {{ imghub }} \
+    --apiserver-advertise-address {{ inventory_hostname }} \
+    --pod-network-cidr={{ podcidr }} \
+    --token-ttl 0 \
+    -v 5
+  register: kubeadm_init_result
+
+- name: 把结果记录到指定文件中去
+  lineinfile:
+    path: /root/kubeadm_init_result
+    line: "{{ kubeadm_init_result.stdout }}"
+    create: yes
+
+- name: 获取token
+  shell: |
+    kubeadm token list | tail -1 |awk '{print $1}' > /root/kubeadm_join_info
+  register: token
+
+- name: 获取hash值
+  shell: |
+    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+    openssl rsa -pubin -outform der 2> /dev/null | \
+    openssl dgst -sha256 -hex | \
+    sed 's/^.* //' >> /root/kubeadm_join_info
+
+- name: 拉取到本地
+  fetch:
+    src: /root/kubeadm_join_info
+    dest: ./
+    flat: yes
+    
+    
