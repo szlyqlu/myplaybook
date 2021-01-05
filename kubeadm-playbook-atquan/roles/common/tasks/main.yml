@@ -1,0 +1,61 @@
+- name: 拷贝repo文件
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - "{{ repolist }}"
+
+- name: 安装必要的组件
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - "kubeadm-{{ k8sver }}"
+      - "kubelet-{{ k8sver }}"
+      - "kubectl-{{ k8sver }}"
+      - "docker-ce"
+
+- name: 关闭swap
+  shell: |
+    swapoff -a
+    sed -i '/swap/s/^/#/' /etc/fstab
+
+- name: 创建docker相应目录
+  file:
+    name: "{{ item }}"
+    state: directory
+  with_items:
+    - "/etc/docker"
+    - "/etc/systemd/system/docker.service.d"
+
+- name: 添加系统参数
+  copy:
+    src: k8s.conf
+    dest: /etc/sysctl.d/k8s.conf
+
+- name: 应用系统参数
+  shell: |
+    sysctl -p
+
+- name: 拷贝daemon.json
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+
+- name: 启动docker
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: 把kubelet加到开机启动
+  service:
+    name: kubelet
+    enabled: true
+
+- name: 增加集群主机信息到/etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item }}"
+  with_items:
+    - "{{ etc_hosts }}"
