@@ -15,6 +15,12 @@
     line: "{{ kubeadm_init_result.stdout }}"
     create: yes
 
+- name: 拷贝admin.conf文件到执行用户的home目录下
+  shell: |
+    mkdir -p $HOME/.kube
+    cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+    chown $(id -u):$(id -g) $HOME/.kube/config
+
 - name: 获取token
   shell: |
     kubeadm token list | tail -1 |awk '{print $1}' > /root/kubeadm_join_info

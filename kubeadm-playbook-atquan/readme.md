@@ -1,0 +1,37 @@
+# 说明
+该playbook是用kubeadm来部署一个无HA的k8s集群
+
+具有以下特点
+- 用的yum repo来自阿里云，如果想要更换，可以修改roles/common/files/下的repo文件
+- 用的是k8s镜像来自阿里云仓库，如果需要更换可以修改host.yml中imagehub参数
+- 没有部署网络插件，网络插件请查看 https://kubernetes.io/docs/concepts/cluster-administration/addons/
+
+# 参数说明
+所有参数均存于host.yml文件，是个yml格式的inventory文件
+```
+master:
+  hosts: # master主机地址，由于是单点无HA架构的k8s架构，所以master只能填一个
+    192.168.30.52:
+node:
+  hosts: # node主机地址，可以填多个
+    192.168.30.53:
+all:
+  children:
+    master:
+    node:
+  vars:
+    repolist: # repo文件名，用来给主机使用yum安装kubelet，docker等一些工具，可以直接修改文件或是换自己的repo文件
+      - { src: "kubernetes.repo", dest: "/etc/yum.repos.d/kubernetes.repo" }
+      - { src: "docker-ce.repo", dest: "/etc/yum.repos.d/docker-ce.repo" }
+    k8sver: 1.18.2 # k8s版本，目前我只测试过1.18.2版本
+    etc_hosts: # 把集群信息写入/etc/hosts的列表，建议所有节点都写入（特别是多网卡主机）
+      - "192.168.30.52 k8s1"
+      - "192.168.30.53 k8s2"
+    imghub: registry.aliyuncs.com/google_containers # 镜像仓库地址
+    podcidr: 172.10.0.0/16 # pod的网段
+```
+# 执行方法
+在该playbook目录下，用以下命令执行
+```
+ansible-playbook -i host.yml site.yml -uroot -k
+```
