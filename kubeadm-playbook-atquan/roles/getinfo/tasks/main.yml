@@ -1,0 +1,18 @@
+- name: 获取token
+  shell: |
+    kubeadm token list | tail -1 |awk '{print $1}' > /root/kubeadm_join_info
+  register: token
+
+- name: 获取hash值
+  shell: |
+    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+    openssl rsa -pubin -outform der 2> /dev/null | \
+    openssl dgst -sha256 -hex | \
+    sed 's/^.* //' >> /root/kubeadm_join_info
+
+- name: 拉取到本地
+  fetch:
+    src: /root/kubeadm_join_info
+    dest: ./
+    flat: yes
+  

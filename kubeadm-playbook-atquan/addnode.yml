@@ -1,0 +1,8 @@
+- hosts: master
+  roles:
+    - getinfo
+
+- hosts: addnode
+  roles:
+    - common
+    - node
