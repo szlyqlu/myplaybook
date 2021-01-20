@@ -1,4 +1,9 @@
 # 说明
+2021-1-20更新
+- 增加了后期添加node的功能
+- 修正了site.yml空白
+- 修正了host.yml缺少apiserverip这个参数
+- 增加了host.yml中的addnode部分
 该playbook是用kubeadm来部署一个无HA的k8s集群
 
 具有以下特点
@@ -15,6 +20,9 @@ master:
 node:
   hosts: # node主机地址，可以填多个
     192.168.30.53:
+addnode: 这个部分用于追加node的场景，如果用于初始化，没必要添加
+  hosts:
+    192.168.30.54:
 all:
   children:
     master:
@@ -28,6 +36,7 @@ all:
       - "192.168.30.52 k8s1"
       - "192.168.30.53 k8s2"
     imghub: registry.aliyuncs.com/google_containers # 镜像仓库地址
+    apiserverip: 192.168.30.52 # apiserver的地址，用来node加入集群用的
     podcidr: 172.10.0.0/16 # pod的网段
 ```
 # 执行方法
