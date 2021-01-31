@@ -4,6 +4,7 @@
 - 修正了site.yml空白
 - 修正了host.yml缺少apiserverip这个参数
 - 增加了host.yml中的addnode部分
+
 该playbook是用kubeadm来部署一个无HA的k8s集群
 
 具有以下特点
