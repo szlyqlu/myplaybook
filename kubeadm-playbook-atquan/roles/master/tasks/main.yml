@@ -4,7 +4,7 @@
       shell: |
         kubeadm init \
         --kubernetes-version=1.18.2 \
-        --control-plane-endpoint {{ apiserverip }}:6443" \
+        --control-plane-endpoint {{ apiserverip }}:6443 \
         --apiserver-advertise-address {{ inventory_hostname }} \
         --image-repository {{ imghub }} \
         --pod-network-cidr={{ podcidr }} \
