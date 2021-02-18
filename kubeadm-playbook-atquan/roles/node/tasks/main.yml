@@ -3,4 +3,4 @@
     kubeadm join {{ apiserverip }}:6443 \
     --apiserver-advertise-address {{ inventory_hostname }} \
     --token {{ lookup('pipe','cat kubeadm_join_info|head -1') }} \
-    --discovery-token-ca-cert-hash sha256:{{ lookup('pipe','cat kubeadm_join_info|tail -1') }}
+    --discovery-token-ca-cert-hash sha256:{{ lookup('pipe','sed -n 2p kubeadm_join_info') }}

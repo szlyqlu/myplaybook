@@ -17,4 +17,6 @@ all:
       - "192.168.30.52 k8s1"
       - "192.168.30.53 k8s2"
     imghub: registry.aliyuncs.com/google_containers
+    apiserverip: 192.168.30.52
     podcidr: 172.10.0.0/16
+    hacluster: yes

@@ -1,4 +1,8 @@
 # 说明
+2021-2-18更新
+- 增加了ha架构的部署流程，但ha架构中控制面的添加key只有两个小时，目前没有控制面加入的角色
+- 针对性的修改了host.yml一些参数
+- 添加了一个flanneld的描述文件
 2021-1-20更新
 - 增加了后期添加node的功能
 - 修正了site.yml空白
@@ -16,7 +20,7 @@
 所有参数均存于host.yml文件，是个yml格式的inventory文件
 ```
 master:
-  hosts: # master主机地址，由于是单点无HA架构的k8s架构，所以master只能填一个
+  hosts: # master主机地址，可以多个，多个是基于ha架构的，所以以下的vars中hacluster请写yes
     192.168.30.52:
 node:
   hosts: # node主机地址，可以填多个
@@ -37,8 +41,9 @@ all:
       - "192.168.30.52 k8s1"
       - "192.168.30.53 k8s2"
     imghub: registry.aliyuncs.com/google_containers # 镜像仓库地址
-    apiserverip: 192.168.30.52 # apiserver的地址，用来node加入集群用的
+    apiserverip: 192.168.30.52 # apiserver的地址，用来node加入集群用的，当你使用ha架构的时候这个ip为vip，需要你使用nginx，haproxy，F5此类的elb实现，转发规则为vip:6443->masterip:6443
     podcidr: 172.10.0.0/16 # pod的网段
+    hacluster: "no" # 如果你要部署的是ha架构的，那就填yes。
 ```
 # 执行方法
 在该playbook目录下，用以下命令执行

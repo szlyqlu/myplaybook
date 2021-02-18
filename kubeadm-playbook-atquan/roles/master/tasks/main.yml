@@ -1,42 +1,90 @@
-- name: 初始化集群
-  shell: |
-    kubeadm init \
-    --kubernetes-version={{ k8sver }} \
-    --image-repository {{ imghub }} \
-    --apiserver-advertise-address {{ inventory_hostname }} \
-    --pod-network-cidr={{ podcidr }} \
-    --token-ttl 0 \
-    -v 5
-  register: kubeadm_init_result
+- name: ha架构的任务
+  block:
+    - name: ha情况下的第一台初始化(ha)
+      shell: |
+        kubeadm init \
+        --kubernetes-version=1.18.2 \
+        --control-plane-endpoint {{ apiserverip }}:6443" \
+        --apiserver-advertise-address {{ inventory_hostname }} \
+        --image-repository {{ imghub }} \
+        --pod-network-cidr={{ podcidr }} \
+        --token-ttl 0 \
+        --upload-certs \
+        -v 5
+      register: kubeadm_init_ha_result
+      when: groups['master'].index(inventory_hostname) == 0
+    
+    - name: 把初始化结果保存于/root/kubeadm_init_ha_result文件中(ha)
+      lineinfile:
+        path: /root/kubeadm_init_ha_result
+        line: "{{ kubeadm_init_ha_result.stdout }}"
+      when: groups['master'].index(inventory_hostname) == 0
+    
+    - name: 获取控制面的信息(ha)
+      shell: |
+        sed -n '/kubeadm join/,/Please note that/'p /root/kubeadm_init_ha_result|grep -w "\-\-token"|awk '{print $(NF-1)}'|sort -u > /root/kubeadm_join_info
+        sed -n '/kubeadm join/,/Please note that/'p /root/kubeadm_init_ha_result|grep sha256|tail -1|awk -F':' '{print $NF}' >> /root/kubeadm_join_info
+        sed -n '/kubeadm join/,/Please note that/'p /root/kubeadm_init_ha_result|grep 'control-plane --certificate-key'|awk '{print $NF}' >> /root/kubeadm_join_info
+      when: groups['master'].index(inventory_hostname) == 0
+      
+    - name: 拉取ha架构的信息到本地(ha)
+      fetch:
+        src: /root/kubeadm_join_info
+        dest: ./
+        flat: yes
+      
+    - name: 加入控制面(ha)
+      shell: |
+        kubeadm join {{ apiserverip }}:6443 \
+        --token {{ lookup('pipe','cat kubeadm_join_info|head -1') }} \
+        --apiserver-advertise-address {{ inventory_hostname }} \
+        --discovery-token-ca-cert-hash sha256:{{ lookup('pipe','sed -n 2p kubeadm_join_info') }} \
+        --control-plane --certificate-key {{ lookup('pipe','sed -n 3p kubeadm_join_info') }} \
+        -v 5
+      when: group['master'].index(inventory_hostname) > 0
+  when: hacluster == "yes"
 
-- name: 把结果记录到指定文件中去
-  lineinfile:
-    path: /root/kubeadm_init_result
-    line: "{{ kubeadm_init_result.stdout }}"
-    create: yes
+- name: 非ha架构的任务
+  block:
+    - name: 初始化集群(非ha)
+      shell: |
+        kubeadm init \
+        --kubernetes-version={{ k8sver }} \
+        --image-repository {{ imghub }} \
+        --apiserver-advertise-address {{ inventory_hostname }} \
+        --pod-network-cidr={{ podcidr }} \
+        --token-ttl 0 \
+        -v 5
+      register: kubeadm_init_result
+
+    - name: 把结果记录到指定文件中去
+      lineinfile:
+        path: /root/kubeadm_init_result
+        line: "{{ kubeadm_init_result.stdout }}"
+        create: yes
+
+    - name: 获取token
+      shell: |
+        kubeadm token list | tail -1 |awk '{print $1}' > /root/kubeadm_join_info
+      register: token
+    
+    - name: 获取hash值
+      shell: |
+        openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
+        openssl rsa -pubin -outform der 2> /dev/null | \
+        openssl dgst -sha256 -hex | \
+        sed 's/^.* //' >> /root/kubeadm_join_info
+    
+    - name: 拉取到本地
+      fetch:
+        src: /root/kubeadm_join_info
+        dest: ./
+        flat: yes
+  when: hacluster != "yes"
 
 - name: 拷贝admin.conf文件到执行用户的home目录下
   shell: |
     mkdir -p $HOME/.kube
     cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     chown $(id -u):$(id -g) $HOME/.kube/config
-
-- name: 获取token
-  shell: |
-    kubeadm token list | tail -1 |awk '{print $1}' > /root/kubeadm_join_info
-  register: token
-
-- name: 获取hash值
-  shell: |
-    openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | \
-    openssl rsa -pubin -outform der 2> /dev/null | \
-    openssl dgst -sha256 -hex | \
-    sed 's/^.* //' >> /root/kubeadm_join_info
-
-- name: 拉取到本地
-  fetch:
-    src: /root/kubeadm_join_info
-    dest: ./
-    flat: yes
-    
     
