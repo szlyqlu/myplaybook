@@ -33,6 +33,7 @@
         src: /root/kubeadm_join_info
         dest: ./
         flat: yes
+      when: groups['master'].index(inventory_hostname) == 0
       
     - name: 加入控制面(ha)
       shell: |
