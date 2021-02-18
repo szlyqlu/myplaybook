@@ -18,6 +18,7 @@
       lineinfile:
         path: /root/kubeadm_init_ha_result
         line: "{{ kubeadm_init_ha_result.stdout }}"
+        create: yes
       when: groups['master'].index(inventory_hostname) == 0
     
     - name: 获取控制面的信息(ha)
