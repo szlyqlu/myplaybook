@@ -1,0 +1,65 @@
+- name: 修改sysctl
+  template:
+    src: "sysctl.conf.j2"
+    dest: /etc/sysctl.conf
+
+- name: 修改limits
+  template:
+    src: "limits.conf.j2"
+    dest: /etc/security/limits.conf
+
+- name: 生效参数
+  shell: |
+    sysctl -p;ulimit -n
+
+- name: 安装haproxy和rsyslog
+  yum:
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - "haproxy"
+      - "rsyslog"
+
+- name: 替换主配置文件
+  template:
+    src: haproxy.cfg.j2
+    dest: /etc/haproxy/haproxy.conf
+
+- name: 替换/etc/sysconfig/haproxy
+  template:
+    src: sysconfig_haproxy.j2
+    dest: /etc/sysconfig/haproxy
+
+- name: 建立日志目录
+  file:
+    path: /var/log/haproxy
+    state: directory
+
+- name: 修改/etc/rsyslog.conf让其可以监听udp
+  replace:
+    path: /etc/rsyslog.conf
+    regexp: "{{ item.before }}"
+    replace: "{{ item.after }}"
+  with_item:
+    - { before: "^#$ModLoad imudp", after: "$ModLoad imudp" }
+    - { before: "^#$InputTCPServerRun 514", after: "#$InputTCPServerRun 514" }
+
+- name: 修改rsyslog的配置/etc/sysconfig/rsyslog
+  lineinfile:
+    path: /etc/sysconfig/rsyslog
+    line: "SYSLOGD_OPTIONS=\"-r -m 0 -c 2\""
+    create: yes
+
+- name: 增加rsyslog对haproxy的收集
+  lineinfile:
+    path: /etc/rsyslog.conf
+    line: "local0.*                      /var/log/haproxy/haproxy.log"
+
+- name: 启动haproxy和重启rsyslog
+  service:
+    name: "{{ item.name }}"
+    state: restarted
+    enabled: yes
+  with_items:
+    - "haproxy"
+    - "rsyslog"
