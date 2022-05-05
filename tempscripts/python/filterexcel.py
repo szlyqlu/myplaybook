@@ -3,19 +3,62 @@
 # 使用openpyxl来过滤excel中的数据
 # 如果没有openpyxl，请使用pip install openpyxl安装
 
-import json
 import time
-import sys,os
+import sys,getopt
 from openpyxl import load_workbook
 from openpyxl import Workbook
+
+def usage():
+  helpmsg = """
+使用方法:python {} -x excel文件 -f 筛选文件 -t 筛选标题行号 -k 筛选关键字 -r 是否反向筛选
+         -x --xlsx excel文件路径
+         -f --filter 筛选文件路径
+         -t --title excel文件的筛选行号
+         -k --keyword 筛选关键字
+         可选-r --reverse 是否反选
+""".format(sys.argv[0])
+  print(helpmsg)
+  sys.exit(0)
+
+def checkargv(argv):
+  xlsx = ""
+  filter = ""
+  title = ""
+  keyword = ""
+  reverse_chosen = False
+
+  if len(sys.argv) < 4:
+    usage()
+
+  try:
+    opts, args = getopt.getopt(argv, "hx:f:t:k:r", ["help", "xlsx=", "filter=", "title=", "keyword="])
+  except getopt.GetoptError:
+    print("输入错了参数")
+    usage()
+
+  for opt, arg in opts:
+    if opt in ("-h", "--help"):
+      usage()
+    elif opt in ("-x", "--xlsx"):
+      xlsx = arg
+    elif opt in ("-f", "--filter"):
+      filter = arg
+    elif opt in ("-t", "--title"):
+      title = arg
+    elif opt in ("-k", "--keyword"):
+      keyword = arg
+    elif opt in ("-r", "--reverse"):
+      reverse_chosen = True
+
+  return xlsx, filter, title, keyword, reverse_chosen
 
 class ExcelOp(object):
   # 初始化载入工作簿和sheet
   def __init__(self, file):
     self.file = file
     self.wb = load_workbook(self.file)
-    sheets = self.wb.get_sheet_names()
-    self.ws = self.wb[self.sheet]
+    self.sheet = self.wb.get_sheet_names()
+    self.ws = self.wb[self.sheet[0]]
 
   # 获取表格的总行数和总列数
   def get_row_col_num(self, type):
@@ -37,7 +80,7 @@ class ExcelOp(object):
 
 # 屏幕信息输出带时间戳
 def printmeg(megstr):
-  nowt = time.strftime("%Y-%m-%d %H:%M%S", time.localtime())
+  nowt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
   print("{} {}".format(nowt, megstr))
 
 # 筛选出列表信息的导出方法
@@ -54,48 +97,49 @@ def tranfilter(rawlist):
   for row in rawlist:
     for col in range(1, len(row) + 1):
       _ = ws1.cell(column = col, row = rownum, value = "{0}".format(row[col - 1]))
+    rownum = rownum + 1
 
-  wb.save()
+  wb.save(dest_file)
   megstr = "完成，结果请查看{}".format(dest_file)
   printmeg(megstr)
 
 if __name__ == "__main__":
 
-  if len(sys.argv) != 5:
-    megstr = "错误，使用方法为python {} excel文件 筛选文件 筛选标题行号 筛选关键字".format(sys.argv[0])
-    printmeg(megstr)
-    exit(1)
+  if len(sys.argv) < 2:
+    usage()
   else:
-    filename = sys.argv[1]
-    filterfile = sys.argv[2]
-    titlerow = sys.argv[3]
-    filterkey = sys.argv[4]
+    xlsx, filter, title, keyword, reverse_chosen = checkargv(sys.argv[1:])
 
     try:
-      sourcews = ExcelOp(filename)
+      sourcews = ExcelOp(xlsx)
       sourcerow = sourcews.get_row_col_num('row')
       sourcecol = sourcews.get_row_col_num('col')
 
       if sourcerow == 0:
-        megstr = "错误，{}的sheet1是空表".format(filename)
+        megstr = "错误，{}的sheet1是空表".format(xlsx)
         printmeg(megstr)
         exit(1)
       
       # 读取筛选文件
-      f = open(filterfile, 'r')
+      f = open(filter, 'r')
       filtercontlist = f.read().split('\n')
-
       # 初始化筛选数据
       filterdatalist = []
       # 获取标题数据列表
-      tiltelist = sourcews.get_row_value(int(titlerow))
+      titlelist = sourcews.get_row_value(int(title))
       # 获取筛选关键字所在的列号
-      filtercol = tiltelist.index(filterkey)
+      filtercol = titlelist.index(keyword)
       # 循环添加筛选信息
       for row in range(1, sourcerow + 1):
         rowlist = sourcews.get_row_value(row)
-        if rowlist[filtercol] in filtercontlist:
-          filterdatalist.append(rowlist)
+
+        if reverse_chosen:
+          if str(rowlist[filtercol]) not in filtercontlist:
+            filterdatalist.append(rowlist)
+        else:
+          if str(rowlist[filtercol]) in filtercontlist:
+            filterdatalist.append(rowlist)
+
       
       # 输出筛选后的结果
       if filterdatalist == []:
@@ -103,7 +147,8 @@ if __name__ == "__main__":
         printmeg(megstr)
       else:
         # 这步是为了插入标题
-        filterdatalist.insert(0, tiltelist)
+        if titlelist not in filterdatalist:
+          filterdatalist.insert(0, titlelist)
         # 把筛选结果写入新文件
         tranfilter(filterdatalist)
     except:
